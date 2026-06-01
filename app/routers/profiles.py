@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.models import Profile
 from typing import Optional
 
-router = APIRouter(prefix="/profiles", tags=["profiles"])
+router = APIRouter(prefix="/api/v1/profiles", tags=["profiles"])
 
 class ProfileCreate(BaseModel):
     id: str

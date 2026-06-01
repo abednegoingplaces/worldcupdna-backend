@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models.models import Match
 from typing import Optional
 
-router = APIRouter(prefix="/matches", tags=["matches"])
+router = APIRouter(prefix="/api/v1/matches", tags=["matches"])
 
 @router.get("/")
 def get_matches(

@@ -6,7 +6,7 @@ from app.models.models import Prediction, Match, Profile
 from typing import Optional
 import math
 
-router = APIRouter(prefix="/predictions", tags=["predictions"])
+router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
 
 class PredictionCreate(BaseModel):
     user_id: str
