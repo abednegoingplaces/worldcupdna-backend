@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import venues, matches, predictions, leaderboard
+from app.routers import matches, venues, predictions, leaderboard, profiles
 from app.database import engine
 from app.models import models
 
@@ -8,8 +8,8 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="WorldCupDNA API",
-    version="1.0.0",
-    description="Fan identity and prediction platform for FIFA World Cup 2026"
+    description="FIFA World Cup 2026 fan platform",
+    version="1.0.0"
 )
 
 app.add_middleware(
@@ -20,16 +20,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
-app.include_router(venues.router)
 app.include_router(matches.router)
+app.include_router(venues.router)
 app.include_router(predictions.router)
 app.include_router(leaderboard.router)
+app.include_router(profiles.router)
 
 @app.get("/")
 def root():
     return {
-        "platform": "WorldCupDNA",
+        "project": "WorldCupDNA",
         "version": "1.0.0",
         "docs": "/docs",
         "status": "live"
