@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import matches, venues, predictions, leaderboard, profiles
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from app.routers import matches, venues, predictions, leaderboard, profiles, auth
 from app.database import engine
 from app.models import models
 
@@ -20,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(matches.router)
 app.include_router(venues.router)
 app.include_router(predictions.router)
@@ -29,8 +34,11 @@ app.include_router(profiles.router)
 @app.get("/")
 def root():
     return {
-        "project": "WorldCupDNA",
+        "message": "WorldCupDNA API is live 🏆",
         "version": "1.0.0",
-        "docs": "/docs",
-        "status": "live"
+        "docs": "/docs"
     }
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}

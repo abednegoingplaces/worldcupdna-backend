@@ -1,5 +1,5 @@
 from app.database import engine, Base
-from app.models.models import Profile, Match, Prediction, Venue
+from app.models.models import User, Match, Prediction, Venue
 from dotenv import load_dotenv
 
 load_dotenv()

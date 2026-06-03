@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
-from app.models.models import Prediction, Match, Profile
+from app.models.models import Prediction, Match, User
 from typing import Optional
 import math
 
@@ -80,9 +80,9 @@ def score_predictions(match_id: str, db: Session = Depends(get_db)):
 
         pred.points_earned = points
 
-        profile = db.query(Profile).filter(Profile.id == pred.user_id).first()
-        if profile:
-            profile.total_points = (profile.total_points or 0) + points
+        User = db.query(User).filter(User.id == pred.user_id).first()
+        if User:
+            User.total_points = (User.total_points or 0) + points
 
         scored += 1
 
