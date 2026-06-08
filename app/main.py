@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.routers import matches, venues, predictions, leaderboard, profiles, auth, notifications, payments, admin
+from app.routers import matches, venues, predictions, leaderboard, profiles, auth, notifications, payments, admin, players
 from app.database import engine
 from app.models import models
 
@@ -33,6 +33,7 @@ app.include_router(profiles.router)
 app.include_router(notifications.router)
 app.include_router(payments.router)
 app.include_router(admin.router)
+app.include_router(players.router)
 
 @app.get("/")
 def root():
