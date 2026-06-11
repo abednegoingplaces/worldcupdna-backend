@@ -18,6 +18,14 @@ from app.modules.matches.models import Match
 
 WC = settings.WORLD_CUP_COMPETITION_ID
 
+# How often a read is allowed to trigger a fresh upstream sync. football-data
+# moves matches SCHEDULED -> IN_PLAY -> FINISHED and only exposes updated scores
+# when you re-poll, so without this the table freezes at its first-synced state
+# (every match "scheduled", no results). The free tier allows 10 req/min and a
+# sync is a single competition-wide request, so a short TTL is safe.
+_SYNC_TTL = timedelta(seconds=90)
+_last_sync: Optional[datetime] = None
+
 
 def _parse_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
@@ -65,14 +73,30 @@ def sync_world_cup(db: Session) -> int:
 
 
 def ensure_synced(db: Session) -> None:
-    """Lazily populate the matches table on first use so the app works out of
-    the box even before anyone runs the sync script."""
-    if db.query(Match).count() == 0 and settings.FOOTBALL_API_KEY:
-        try:
-            sync_world_cup(db)
-        except Exception:
-            # Don't break reads if the upstream is unavailable.
-            pass
+    """Keep the matches table fresh on read.
+
+    Populates the table on first use (so the app works out of the box) and, once
+    populated, re-syncs at most once per ``_SYNC_TTL`` so live scores and
+    FINISHED results actually propagate from football-data instead of the table
+    freezing at its first-synced state. A dedicated cron (``scripts.sync_matches``)
+    can still be scheduled for tighter refresh during the tournament.
+    """
+    global _last_sync
+    if not settings.FOOTBALL_API_KEY:
+        return
+    now = datetime.now(timezone.utc)
+    is_empty = db.query(Match).count() == 0
+    is_stale = _last_sync is None or (now - _last_sync) > _SYNC_TTL
+    if not (is_empty or is_stale):
+        return
+    # Mark the attempt up front so concurrent requests don't all hit the upstream
+    # within the same window; on failure we keep serving the cached DB rows.
+    _last_sync = now
+    try:
+        sync_world_cup(db)
+    except Exception:
+        # Don't break reads if the upstream is unavailable.
+        pass
 
 
 # --- Reads -------------------------------------------------------------------
