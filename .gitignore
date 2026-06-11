@@ -1,5 +1,21 @@
+# Environments
 venv/
+.venv/
+env/
+
+# Secrets — never commit any .env anywhere in the tree
 .env
+*.env
+!.env.example
+app/.env
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+
+# Local SQLite (smoke tests / scratch)
+*.db
+
+# OS
 .DS_Store

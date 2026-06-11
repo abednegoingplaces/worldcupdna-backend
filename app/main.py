@@ -1,48 +1,79 @@
+"""WorldCupDNA API — application entrypoint.
+
+A modular monolith: each domain lives under ``app/modules/<domain>`` with its
+own models, schemas, service and router. This file wires those routers together
+behind a single FastAPI app and the ``/api/v1`` prefix.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
-load_dotenv()
+from app.core.config import settings
+from app.core.database import Base, engine
+from app import models_registry  # noqa: F401  (registers all tables on Base)
 
-from app.routers import matches, venues, predictions, leaderboard, profiles, auth, notifications, payments, admin, players
-from app.database import engine
-from app.models import models
+# Module routers
+from app.modules.admin.router import router as admin_router
+from app.modules.auth.router import router as auth_router
+from app.modules.leaderboard.router import router as leaderboard_router
+from app.modules.matches.router import router as matches_router
+from app.modules.notifications.router import router as notifications_router
+from app.modules.payments.router import router as payments_router
+from app.modules.players.router import router as players_router
+from app.modules.predictions.router import router as predictions_router
+from app.modules.stats.router import router as stats_router
+from app.modules.users.router import router as users_router
+from app.modules.venues.router import router as venues_router
 
-models.Base.metadata.create_all(bind=engine)
+# Create tables (idempotent). For schema changes on an existing DB use the
+# migration scripts in ``scripts/``.
+Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="WorldCupDNA API",
-    description="FIFA World Cup 2026 fan platform",
-    version="1.0.0"
-)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.APP_NAME,
+        description="FIFA World Cup 2026 fan identity & prediction platform",
+        version=settings.APP_VERSION,
+    )
 
-app.include_router(auth.router)
-app.include_router(matches.router)
-app.include_router(venues.router)
-app.include_router(predictions.router)
-app.include_router(leaderboard.router)
-app.include_router(profiles.router)
-app.include_router(notifications.router)
-app.include_router(payments.router)
-app.include_router(admin.router)
-app.include_router(players.router)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-@app.get("/")
-def root():
-    return {
-        "message": "WorldCupDNA API is live 🏆",
-        "version": "1.0.0",
-        "docs": "/docs"
-    }
+    routers = [
+        auth_router,
+        users_router,
+        matches_router,
+        predictions_router,
+        leaderboard_router,
+        venues_router,
+        notifications_router,
+        players_router,
+        stats_router,
+        payments_router,
+        admin_router,
+    ]
+    for router in routers:
+        app.include_router(router, prefix=settings.API_PREFIX)
 
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
+    @app.get("/", tags=["meta"])
+    def root():
+        return {
+            "message": "WorldCupDNA API is live 🏆",
+            "version": settings.APP_VERSION,
+            "docs": "/docs",
+            "api": settings.API_PREFIX,
+        }
+
+    @app.get("/health", tags=["meta"])
+    def health():
+        return {"status": "healthy", "environment": settings.ENVIRONMENT}
+
+    return app
+
+
+app = create_app()
