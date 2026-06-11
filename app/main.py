@@ -25,8 +25,19 @@ from app.modules.users.router import router as users_router
 from app.modules.venues.router import router as venues_router
 
 # Create tables (idempotent). For schema changes on an existing DB use the
-# migration scripts in ``scripts/``.
-Base.metadata.create_all(bind=engine)
+# migration scripts in ``scripts/``. This runs at import/startup, so a transient
+# database hiccup (e.g. a cold Neon pooler) must NOT crash the worker before it
+# can bind to $PORT — otherwise the whole Render deploy fails its health check.
+# Tables are created best-effort; per-request handlers open their own sessions.
+import logging
+
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as exc:  # pragma: no cover - boot resilience
+    logging.getLogger("uvicorn.error").warning(
+        "create_all skipped at startup (%s); continuing — tables are managed "
+        "by scripts/migrate.py", exc,
+    )
 
 
 def create_app() -> FastAPI:

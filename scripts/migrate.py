@@ -38,6 +38,13 @@ STATEMENTS = [
     "ALTER TABLE matches ADD COLUMN IF NOT EXISTS stage_code VARCHAR",
     "ALTER TABLE matches ADD COLUMN IF NOT EXISTS matchday INTEGER",
     "ALTER TABLE matches ADD COLUMN IF NOT EXISTS venue VARCHAR",
+    # timestamp columns were added to legacy tables after their first deploy
+    "ALTER TABLE matches ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now()",
+    "ALTER TABLE matches ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now()",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
+    "ALTER TABLE predictions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now()",
+    "ALTER TABLE predictions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
 ]
 
 
